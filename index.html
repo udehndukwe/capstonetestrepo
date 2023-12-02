@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Calendar Integration with FullCalendar</title>
+
+    <!-- Add jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- Add FullCalendar CSS and JS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+
+    <!-- Include Google Identity Services Library -->
+    <script src="https://accounts.google.com/gsi/client"></script>
+
+    <script>
+        // Initialize Google Identity Services
+        google.accounts.id.initialize({
+            client_id: '91502832743-s2fcg6enlsc588e7b0t48o3ct2t1hg63.apps.googleusercontent.com',
+            callback: initGoogleServices
+        });
+
+        // Initialize Google Services
+        function initGoogleServices(response) {
+            if (response.error) {
+                console.error('Error initializing Google Identity Services:', response.error);
+            } else {
+                console.log('Google Identity Services initialized successfully.');
+                // Load the API client
+                gapi.load('client', initClient);
+            }
+        }
+
+        // Load the API client
+        function initClient() {
+            gapi.client.init({
+                apiKey: 'AIzaSyBHvj9aWJcrCtyYh1o6UtAGkR2UyjfOFrE',
+                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+                scope: 'https://www.googleapis.com/auth/calendar.readonly',
+            }).then(function () {
+                console.log('Google API client initialized successfully.');
+
+                // Fetch Google Calendar Events
+                gapi.client.calendar.events.list({
+                    'calendarId': 'primary',
+                    'timeMin': (new Date()).toISOString(),
+                    'showDeleted': false,
+                    'singleEvents': true,
+                    'maxResults': 10,
+                    'orderBy': 'startTime',
+                }).then(function (response) {
+                    // Handle the response and add events to FullCalendar
+                    var events = [];
+                    response.result.items.forEach(function (event) {
+                        events.push({
+                            title: event.summary,
+                            start: event.start.dateTime || event.start.date,
+                            end: event.end.dateTime || event.end.date,
+                        });
+                    });
+
+                    // Initialize FullCalendar
+                    $(document).ready(function () {
+                        $('#calendar').fullCalendar({
+                            header: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'month,agendaWeek,agendaDay',
+                            },
+                            defaultDate: new Date(),
+                            navLinks: true,
+                            editable: false,
+                            eventLimit: true,
+                            events: events, // Add events
+                        });
+                    });
+                });
+            }, function (error) {
+                console.error('Error initializing Google API client:', error);
+            });
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Google Sign-In Button -->
+    <div id="g_id_onload"
+         data-client_id="91502832743-s2fcg6enlsc588e7b0t48o3ct2t1hg63.apps.googleusercontent.com"
+         data-login_uri="http://localhost:8080/homepage.html"
+         data-prompt_parent_id="g_id_onload"
+    ></div>
+
+    <!-- Calendar Container -->
+    <div id="calendar"></div>
+
+</body>
+</html>
